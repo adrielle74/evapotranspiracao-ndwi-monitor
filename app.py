@@ -54,16 +54,20 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 class EVETMonitoringSystem:
-    def __init__(self):
-        self.initialize_ee()
-
-    def initialize_ee(self):
-        """Inicializa o Google Earth Engine"""
-        try:
-            ee.Initialize()
-        except:
-            st.error("Erro ao inicializar Google Earth Engine. Verifique as credenciais.")
-            st.stop()
+  def initialize_ee(self):
+    """Inicializa o Google Earth Engine"""
+    try:
+        # NOVO CÓDIGO - Usando Streamlit Secrets
+        import json
+        sa_info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT_JSON"])
+        credentials = ee.ServiceAccountCredentials(sa_info["client_email"], json.dumps(sa_info))
+        ee.Initialize(credentials)
+    except KeyError:
+        st.error("❌ Credenciais GEE não encontradas. Configure os Secrets do Streamlit.")
+        st.stop()
+    except Exception as e:
+        st.error(f"❌ Erro ao inicializar Google Earth Engine: {e}")
+        st.stop()
 
     def calculate_ndwi(self, image):
         """Calcula o NDWI (Normalized Difference Water Index)"""
