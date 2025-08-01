@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Monitoramento de Evapotranspiração - NDWI</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-seedling"></i> Sistema de Monitoramento de Evapotranspiração - NDWI</h1>
+                <p>Análise de dados espectrais via satélite para agricultura de precisão</p>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-content">
+                    <h3><i class="fas fa-cog"></i> Configurações</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="latitude">Latitude</label>
+                        <input type="number" id="latitude" class="form-control" value="-11.0833" step="0.0001">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="longitude">Longitude</label>
+                        <input type="number" id="longitude" class="form-control" value="-40.1667" step="0.0001">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="buffer">Área de Estudo (km)</label>
+                        <input type="range" id="buffer" class="range-slider" min="1" max="50" value="5">
+                        <span class="range-value" id="bufferValue">5 km</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="startDate">Data Início</label>
+                        <input type="date" id="startDate" class="form-control" value="2024-01-01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="endDate">Data Fim</label>
+                        <input type="date" id="endDate" class="form-control" value="2024-12-31">
+                    </div>
+                    
+                    <button class="btn btn--primary btn--full-width" id="processBtn">
+                        <i class="fas fa-play"></i> Processar Dados
+                    </button>
+                    
+                    <div class="project-info">
+                        <h4><i class="fas fa-info-circle"></i> Sobre o Projeto</h4>
+                        <p>Sistema integrado para análise de evapotranspiração usando índices espectrais NDWI e NDVI através de dados satelitais.</p>
+                        
+                        <div class="info-item">
+                            <strong>Localização Atual:</strong>
+                            <span id="currentLocation">Kennedy, Bahia</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <strong>Área:</strong>
+                            <span id="currentArea">25 km²</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Metrics Cards -->
+                <section class="metrics-section">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-icon ndwi-icon">
+                                <i class="fas fa-tint"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h3>NDWI Médio</h3>
+                                <p class="metric-value" id="ndwiAvg">0.098</p>
+                                <p class="metric-desc">Índice de água normalizado</p>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-icon ndvi-icon">
+                                <i class="fas fa-leaf"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h3>NDVI Médio</h3>
+                                <p class="metric-value" id="ndviAvg">0.500</p>
+                                <p class="metric-desc">Índice de vegetação</p>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-icon et-icon">
+                                <i class="fas fa-thermometer-half"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h3>ET Média</h3>
+                                <p class="metric-value" id="etAvg">3.54</p>
+                                <p class="metric-desc">mm/dia</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Section -->
+                <section class="charts-section">
+                    <div class="charts-grid">
+                        <!-- Time Series Chart -->
+                        <div class="chart-container">
+                            <h3><i class="fas fa-chart-line"></i> Série Temporal - Índices Espectrais e ET</h3>
+                            <div class="chart-wrapper" style="position: relative; height: 400px;">
+                                <canvas id="timeSeriesChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Map -->
+                        <div class="chart-container">
+                            <h3><i class="fas fa-map"></i> Localização da Área de Estudo</h3>
+                            <div id="map" class="map-container"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Analysis Section -->
+                <section class="analysis-section">
+                    <h2><i class="fas fa-analytics"></i> Análise de Correlações</h2>
+                    
+                    <div class="analysis-grid">
+                        <!-- NDWI vs ET Correlation -->
+                        <div class="chart-container">
+                            <h3>Correlação NDWI x ET</h3>
+                            <div class="chart-wrapper" style="position: relative; height: 300px;">
+                                <canvas id="ndwiEtChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- NDVI vs ET Correlation -->
+                        <div class="chart-container">
+                            <h3>Correlação NDVI x ET</h3>
+                            <div class="chart-wrapper" style="position: relative; height: 300px;">
+                                <canvas id="ndviEtChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Statistics Table -->
+                        <div class="chart-container">
+                            <h3>Estatísticas Descritivas</h3>
+                            <div class="table-container">
+                                <table class="stats-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Variável</th>
+                                            <th>Média</th>
+                                            <th>Mínimo</th>
+                                            <th>Máximo</th>
+                                            <th>Desvio Padrão</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="statsTableBody">
+                                        <!-- Data will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button class="btn btn--secondary mt-8" id="downloadBtn">
+                                <i class="fas fa-download"></i> Download CSV
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- System Architecture -->
+                <section class="architecture-section">
+                    <h2><i class="fas fa-sitemap"></i> Arquitetura do Sistema</h2>
+                    <div class="chart-container">
+                        <img src="https://ppl-ai-code-interpreter-files.s3.amazonaws.com/web/direct-files/8cbb42d94dac0ad2a9f6011923d64c34/92ed441a-1c45-4574-a970-3a73afa92e5e/7ac37be1.png" 
+                             alt="Arquitetura e Fluxo de Dados do Sistema" 
+                             class="architecture-diagram">
+                        <p class="architecture-desc">
+                            Fluxograma mostrando como os dados de satélite são processados através do Google Earth Engine 
+                            para calcular índices espectrais e evapotranspiração.
+                        </p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal hidden" id="loadingModal">
+        <div class="modal-content">
+            <div class="loading-spinner"></div>
+            <h3>Processando Dados</h3>
+            <p>Aguarde enquanto analisamos os dados satelitais...</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

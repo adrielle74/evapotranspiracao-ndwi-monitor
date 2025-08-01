@@ -1,0 +1,29 @@
+
+version: '3.8'
+
+services:
+  evapotranspiracao-app:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/config_gee.json
+    volumes:
+      - ./config_gee.json:/app/config_gee.json:ro
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # Serviço opcional para banco de dados (futuras expansões)
+  # postgres:
+  #   image: postgres:13
+  #   environment:
+  #     POSTGRES_DB: evapotranspiracao
+  #     POSTGRES_USER: user
+  #     POSTGRES_PASSWORD: password
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+# volumes:
+#   postgres_data:
