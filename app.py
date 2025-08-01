@@ -66,8 +66,8 @@ class EVETMonitoringSystem:
         st.error("❌ Credenciais GEE não encontradas. Configure os Secrets do Streamlit.")
         st.stop()
     except Exception as e:
-        st.error(f"❌ Erro ao inicializar Google Earth Engine: {e}")
-        st.stop()
+    st.error(f"Erro GEE completo: {e}")
+    st.stop()
 
     def calculate_ndwi(self, image):
         """Calcula o NDWI (Normalized Difference Water Index)"""
